@@ -17,11 +17,11 @@ speak_callback = None
 # -------------------------------
 # 🔐 Configuration (Insert your keys here)
 # -------------------------------
-SPEECH_KEY = "VgHsxdYqCBPWSn53ImKDoeuJZcQR9THr8s8iRajbPsGCrL2mCVb5JQQJ99BGACYeBjFXJ3w3AAAYACOG9zPL"
+SPEECH_KEY = ""
 SPEECH_REGION = "eastus"
-OPENAI_KEY = "6C61qGKaBgLCGtR6aP3B73gKfvezFfMmfT7Xo85pdzixi4hSKJXqJQQJ99BGACfhMk5XJ3w3AAAAACOGS2Yg"
+OPENAI_KEY = ""
 OPENAI_DEPLOYMENT = "gpt-4o"
-OPENAI_ENDPOINT = "https://adity-mcr9ywxy-swedencentral.cognitiveservices.azure.com/"
+OPENAI_ENDPOINT = ""
 
 # -------------------------------
 # 🎤 Azure Speech SDK Setup
