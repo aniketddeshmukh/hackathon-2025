@@ -17,11 +17,11 @@ speak_callback = None
 # -------------------------------
 # 🔐 Configuration (Insert your keys here)
 # -------------------------------
-SPEECH_KEY = ""
+SPEECH_KEY = "syF2qN7o20J8PthKAX25uXhaKq3RbGcRmoW9XKCDaG6J4jYvc6iGJQQJ99BFACYeBjFXJ3w3AAAYACOGoDsW"
 SPEECH_REGION = "eastus"
-OPENAI_KEY = ""
+OPENAI_KEY = "5O5RJtin2yR8FUI0sXeH5PTG5HXj2mAGfZAK3qFfgJAzRyUzLWyAJQQJ99BGACfhMk5XJ3w3AAAAACOGZzbn"
 OPENAI_DEPLOYMENT = "gpt-4o"
-OPENAI_ENDPOINT = ""
+OPENAI_ENDPOINT = "https://adity-mcr9ywxy-swedencentral.cognitiveservices.azure.com/"
 
 # -------------------------------
 # 🎤 Azure Speech SDK Setup
@@ -47,11 +47,11 @@ conversation_context = [
     {
         "role": "system",
         "content": (
-            "You are an AI interviewer. Ask one short technical question about Python at a time. "
-            "Speak naturally, like a human interviewer. Keep each response short (1–2 sentences). "
-            "Wait for the candidate's response before continuing. "
-            "If the candidate responds with silence, gently say you couldn't hear or understand them and repeat the previous question only once. "
-            "If the candidate responds with gibberish or a vague answer, gently say this is incorrect and repeat the question only once."
+             "You are an AI interviewer. Greet the candidate first. Ask exactly 5 technical questions about Python, one at a time. DO NOT repeate questions even if user is wrong. "
+            "Speak like a human. Do not explain answers unless user is totally wrong. Just aknoledge "
+            "If user is silent or gives gibberish, repeat the same question once. "
+            "Do not exceed 5 questions. After the last one, say 'That concludes our interview. Thank you!' "
+            "At the end, we'll evaluate the candidate's performance. Avoid unnecessary dialogue."
         )
     }
 ]
@@ -75,7 +75,7 @@ async def speak_async(text):
     speech_synthesizer.speak_text_async(text)
     done.wait()
     is_speaking.clear()
-    time.sleep(0.8)
+    # time.sleep(0.8)
 
 # -------------------------------
 # 🤖 OpenAI Chat
@@ -107,12 +107,6 @@ async def handle_user_input(text):
         last_q = next((msg["content"] for msg in reversed(conversation_context) if msg["role"] == "assistant"), None)
         if last_q:
             await speak_async(last_q)
-        return
-
-    lowered = text.lower()
-    if any(word in lowered for word in ["leave interview"]):
-        await speak_async("Okay, ending the interview now. Thank you and goodbye!")
-        shutdown_event.set()
         return
 
     conversation_context.append({ "role": "user", "content": text })

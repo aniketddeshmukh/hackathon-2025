@@ -63,7 +63,7 @@ export default function HomePage() {
 
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-row p-8">
+    <div className="min-h-screen bg-white text-black flex flex-row p-8">
       {/* Left Section */}
       <div className="w-2/3 flex flex-col justify-center items-center">
         <h1 className="text-2xl font-bold mb-6 text-center w-full mt-8">

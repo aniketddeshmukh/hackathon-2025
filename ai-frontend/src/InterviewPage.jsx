@@ -20,13 +20,11 @@ export default function InterviewPage() {
   const chatEndRef = useRef(null);
   const socketRef = useRef(null);
 
-  // Timer
   useEffect(() => {
     const interval = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Camera
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({ video: true })
@@ -40,7 +38,6 @@ export default function InterviewPage() {
       });
   }, []);
 
-  // WebSocket setup
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:8000/ws/interview");
     socketRef.current = socket;
@@ -50,15 +47,11 @@ export default function InterviewPage() {
 
     socket.onmessage = (event) => {
       const msg = event.data;
-
       if (msg.startsWith("__USER__::")) {
         const userText = msg.replace("__USER__::", "");
-        console.log("👤 User:", userText);
         setMessages((prev) => [...prev, { role: "user", text: userText }]);
       } else {
-        console.log("🤖 AI:", msg);
         setMessages((prev) => [...prev, { role: "ai", text: msg }]);
-        // No speech synthesis in frontend — handled by Azure backend
       }
     };
 
@@ -68,12 +61,10 @@ export default function InterviewPage() {
     return () => socket.close();
   }, []);
 
-  // Scroll to bottom on new message
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Allow speech recog to add user msg
   useEffect(() => {
     window.addUserMessage = (text) => {
       setMessages((prev) => [...prev, { role: "user", text }]);
@@ -81,7 +72,9 @@ export default function InterviewPage() {
   }, []);
 
   const formatTime = (s) => {
-    const mins = Math.floor(s / 60).toString().padStart(2, "0");
+    const mins = Math.floor(s / 60)
+      .toString()
+      .padStart(2, "0");
     const secs = (s % 60).toString().padStart(2, "0");
     return `${mins}:${secs}`;
   };
@@ -89,7 +82,7 @@ export default function InterviewPage() {
   const handleLeave = () => {
     stream?.getTracks().forEach((track) => track.stop());
     socketRef.current?.close();
-    speechSynthesis.cancel(); // cancel any speech that might be queued
+    speechSynthesis.cancel();
     navigate("/end");
   };
 
@@ -103,39 +96,51 @@ export default function InterviewPage() {
   };
 
   return (
-    <div className="h-screen bg-black text-white flex overflow-hidden">
+    <div className="h-screen bg-white text-black flex overflow-hidden">
       {/* Sidebar */}
-      <div className="w-1/4 bg-gray-900 p-6 flex flex-col justify-between">
+      <div className="w-1/4 p-6 flex flex-col justify-between bg-white border-r border-gray-200 shadow-sm">
         <div>
+          {/* Logo */}
           <img
-            src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png"
+            src=".\gemini2.png"
             alt="Company Logo"
-            className="w-80 h-300 mb-10 ml-3 rounded-md"
+            className="w-65 h-auto mb-2 rounded-xl mx-auto "
           />
-          <h2 className="font-[1000] text-center text-gray-300 mb-6">{today}</h2>
 
-          <div className="mb-10 p-4 bg-gray-800 rounded-lg shadow">
-            <h3 className="font-bold text-lg mb-1">Candidate Details</h3>
-            <p className="text-sm">Name: Aniket</p>
-            <p className="text-sm">Email: aniket@gmail.com</p>
-            <p className="text-sm">Phone: +91-96****</p>
+          {/* Date */}
+          <h2 className="text-center text-lg font-medium text-black-500 mb-6 ">
+            {today}
+          </h2>
+
+          {/* Candidate Details */}
+          <div className="mb-6 p-4 bg-slate-200 border border-black rounded-xl shadow-sm">
+            <h3 className="text-md font-semibold text-gray-800 mb-2">
+              🎓 Candidate
+            </h3>
+            <p className="text-sm text-gray-600">Name: Aniket</p>
+            <p className="text-sm text-gray-600">Email: aniket@gmail.com</p>
+            <p className="text-sm text-gray-600">Phone: +91-9666666666</p>
           </div>
 
-          <div className="p-4 bg-gray-800 rounded-lg shadow">
-            <h3 className="font-bold text-lg mb-1">Job Details</h3>
-            <p className="text-sm">ID: TEST123</p>
-            <p className="text-sm">Company: UBS</p>
-            <p className="text-sm">HR Email: aniket@ubs.com</p>
-            <p className="text-sm">Role: Software Engineer</p>
+          {/* Job Details */}
+          <div className="p-4 bg-slate-200 border border-black rounded-xl shadow-sm mt-10">
+            <h3 className="text-md font-semibold text-gray-800 mb-2">
+              🏢 Job Info
+            </h3>
+            <p className="text-sm text-gray-600">ID: JOB22558</p>
+            <p className="text-sm text-gray-600">Company: ABC Bank</p>
+            <p className="text-sm text-gray-600">HR Email: aniket@ubs.com</p>
+            <p className="text-sm text-gray-600">Role: Software Engineer</p>
           </div>
         </div>
 
+        {/* Footer: Timer + Leave */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-mono">
+          <div className="flex items-center justify-center gap-2 text-xl font-mono text-black mb-4">
             ⏱ <span>{formatTime(seconds)}</span>
           </div>
           <button
-            className="bg-red-600 hover:bg-red-700 w-full py-2 rounded-md font-semibold"
+            className="bg-red-500 hover:bg-red-600 w-full py-2 rounded-lg text-white font-semibold shadow-md"
             onClick={handleLeave}
           >
             Leave Interview
@@ -144,21 +149,24 @@ export default function InterviewPage() {
       </div>
 
       {/* Chat Panel */}
-      <div className="flex-1 p-6 flex flex-col justify-between bg-gray-950">
-        <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 rounded-lg bg-gray-900 p-4">
+      <div className="flex-1 p-6 flex flex-col justify-between bg-white">
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2 rounded-lg">
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex ${
+                msg.role === "user" ? "justify-end" : "justify-start"
+              }`}
             >
               <div
-                className={`max-w-xs sm:max-w-md md:max-w-lg px-4 py-2 rounded-2xl text-sm whitespace-pre-wrap
-                ${msg.role === "user"
-                    ? "bg-indigo-600 text-white rounded-br-none"
-                    : "bg-gray-700 text-white rounded-bl-none"
-                  }`}
+                className={`max-w-xs sm:max-w-md md:max-w-lg px-4 py-2 rounded-2xl text-sm whitespace-pre-wrap shadow-md
+                ${
+                  msg.role === "user"
+                    ? "bg-indigo-100 text-black rounded-br-none"
+                    : "bg-gray-200 text-black rounded-bl-none"
+                }`}
               >
-                <p className="text-xs mb-1 font-semibold">
+                <p className="text-xs mb-1 font-semibold text-gray-600">
                   {msg.role === "user" ? "You" : "AI Interviewer"}
                 </p>
                 {msg.text}
@@ -168,45 +176,42 @@ export default function InterviewPage() {
           <div ref={chatEndRef} />
         </div>
 
-        {/* Message input */}
         <div className="mt-4">
-          <input
+          {/* <input
             type="text"
             placeholder="Type your answer and press Enter..."
-            className="w-full p-3 rounded bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full p-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black bg-white"
             onKeyDown={handleSendMessage}
-          />
+          /> */}
         </div>
       </div>
 
       {/* Right Panel */}
-      <div className="w-1/5 bg-gray-900 p-4 flex flex-col items-center gap-8">
-        <div className="rounded-xl mt-10 overflow-hidden w-full max-w-2xl aspect-video bg-gray-900 mb-6">
+      <div className="w-1/5 p-4 flex flex-col items-center gap-6 bg-gradient-to-b bg-white border-l">
+        <p className="text-3xl font-extrabold text-black tracking-tight mt-10 mb-4 text-center">
+          MyAI Interviewer
+        </p>
+
+        <div className="rounded-xl mt-28 overflow-hidden w-full max-w-2xl aspect-video bg-gray-200 mb-6 border border-black">
           <video
             ref={videoRef}
             autoPlay
             muted
             playsInline
-            className={`${videoOn ? "block" : "hidden"} w-full h-full object-cover`}
+            className={`${
+              videoOn ? "block" : "hidden"
+            } w-full h-full object-cover`}
           />
           {!videoOn && (
-            <div className="flex items-center justify-center w-full h-full bg-gray-700">
-              <VideoOff className="h-12 w-12 text-white" />
+            <div className="flex items-center justify-center w-full h-full bg-gray-300">
+              <VideoOff className="h-12 w-12 text-gray-600" />
             </div>
           )}
         </div>
-        <p className="text-xl -mt-8">Aniket Deshmukh</p>
 
-        <div className="flex flex-col items-center">
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/3/34/UBS_Logo.png"
-            alt="AI Interviewer"
-            className="rounded-xl overflow-hidden w-full max-w-2xl aspect-video bg-gray-900 mb-6 mt-10"
-          />
-          <p className="mt-1 text-xl">AI Interviewer</p>
-        </div>
+        <p className="text-xl font-medium mb-10 text-black">Aniket Deshmukh</p>
 
-        <div className="flex gap-10 mt-4">
+        <div className="flex gap-6 ">
           <MicButtonWithWave />
           <VideoToggleButton videoOn={videoOn} setVideoOn={setVideoOn} />
         </div>
