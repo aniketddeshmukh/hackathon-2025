@@ -25,6 +25,7 @@ OPENAI_KEY = os.environ.get("OPENAI_KEY")
 OPENAI_DEPLOYMENT = os.environ.get("OPENAI_DEPLOYMENT")
 OPENAI_ENDPOINT = os.environ.get("OPENAI_ENDPOINT")
 
+
 # -------------------------------
 # 🎤 Azure Speech SDK Setup
 # -------------------------------
