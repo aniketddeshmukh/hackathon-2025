@@ -4,8 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from report_generator import generate_pdf_report
 import datetime
 import re
-
+from fastapi import UploadFile, File
+from resume_parser import extract_resume_text
 import interview_engine
+from fastapi.concurrency import run_in_threadpool
 from interview_engine import (
     conversation_context,
     speak_async,
@@ -13,6 +15,8 @@ from interview_engine import (
     start_streaming_recognition,
     handle_user_input,
 )
+parsed_resume_data = {}  
+
 previous_question = None  # ADD THIS GLOBAL VARIABLE AT TOP (after question_count)
 
 app = FastAPI()
@@ -25,15 +29,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MAX_QUESTIONS = 5
+MAX_QUESTIONS = 10
 question_count = 0  # Global counter to track how many AI questions were asked
+
+
+
+@app.post("/upload_resume")
+async def upload_resume(file: UploadFile = File(...)):
+    global parsed_resume_data
+    parsed_resume_data = await run_in_threadpool(extract_resume_text, file)
+    return parsed_resume_data
+
 
 @app.websocket("/ws/interview")
 async def interview_ws(websocket: WebSocket):
     global conversation_context, question_count
     await websocket.accept()
     print("✅ WebSocket connected")
-
+    print(parsed_resume_data)
     shutdown_event = asyncio.Event()
 
     # ⬅️ Callback to send data to frontend
@@ -50,11 +63,14 @@ async def interview_ws(websocket: WebSocket):
     conversation_context.append({
         "role": "system",
         "content": (
-            "You are an AI interviewer. Ask exactly 5 different technical questions about Python, one at a time.\n"
+            "You are an AI interviewer. Ask exactly 4 different technical questions about skills given below, one at a time.\n"
             "⚠️ DO NOT repeat any previous question.\n"
             "After each user response, move on to a new question — even if the answer is wrong or unclear.\n"
             "Keep track of your own questions. Do not rephrase or ask variations of the same concept.\n"
-            "After 5 questions, say 'That concludes our interview. Thank you.' and stop asking further questions."
+            "After 10 questions, say 'That concludes our interview. Thanks for joining. You may now close the session.' and stop asking further questions."
+            f"This is the data from candidate's resume: {parsed_resume_data}"
+            "Use this info to personalize your questions by extracting skills, projects and other relivent information."
+
         )
     })
     # 🟢 Greet candidate
@@ -95,9 +111,9 @@ def handle_user_input_wrapper(websocket):
 
         conversation_context.append({ "role": "user", "content": text })
 
-        if question_count >= MAX_QUESTIONS:
-            await speak_async("Thanks for your response. That concludes our interview. You may now close the session.")
-            return
+        # if question_count >= MAX_QUESTIONS:
+        #     await speak_async("Thanks. You may now close the session.")
+        #     return
 
         # Ask AI for next response
         ai_reply = await openai_chat_async(conversation_context)
@@ -112,9 +128,6 @@ def handle_user_input_wrapper(websocket):
         conversation_context.append({ "role": "assistant", "content": ai_reply })
         await speak_async(ai_reply)
         question_count += 1
-
-        if question_count == MAX_QUESTIONS:
-            await speak_async("That was the final question. I'll wait for your last answer before ending.")
     return wrapped
 
 
@@ -147,21 +160,26 @@ async def finalize_interview():
     lines = evaluation_response.splitlines()
     evaluation = {}
     comments = []
+    summary_text = ""
+
     for line in lines:
         score_match = re.match(r"^(.*?):\s*([0-5](\.\d)?)", line)
         if score_match:
             key = score_match.group(1).strip()
             value = float(score_match.group(2))
             evaluation[key] = value
-        elif line.startswith("•") or line.startswith("-"):
+        elif line.strip().startswith(("•", "-")):
             comments.append(line.strip())
+        elif "recommend" in line.lower():
+            summary_text = line.strip()
     # 📝 Generate report
     generate_pdf_report(
-        candidate_name="Aniket Deshmukh",
-        interview_date=datetime.date.today().strftime("%B %d, %Y"),
-        evaluation=evaluation,
-        comments="\n".join(comments[:3])  # Limit to 2-3 bullet points
-    )
+    candidate_name="Aniket Deshmukh",
+    interview_date=datetime.date.today().strftime("%B %d, %Y"),
+    evaluation=evaluation,
+    comments="\n".join(comments[:3]),  # Just bullets
+    summary=summary_text  # The final recommendation line
+)
 
     print("📄 PDF Report Saved")
     conversation_context.clear()
